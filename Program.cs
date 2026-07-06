@@ -15,13 +15,20 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
 
-// Lưu trữ dùng chung trên Supabase (mirror xuống máy để vẫn xem offline)
+// Đăng nhập Supabase (email + mật khẩu, tài khoản chung)
+builder.Services.AddScoped<AuthService>(sp =>
+{
+    var http = new HttpClient { BaseAddress = new Uri(SupabaseConfig.Url) };
+    http.DefaultRequestHeaders.TryAddWithoutValidation("apikey", SupabaseConfig.Key);
+    return new AuthService(http, sp.GetRequiredService<ILocalStorageService>());
+});
+
+// Lưu trữ dùng chung trên Supabase (dùng token của người đăng nhập, mirror xuống máy)
 builder.Services.AddScoped<IAppStore>(sp =>
 {
     var http = new HttpClient { BaseAddress = new Uri(SupabaseConfig.Url) };
     http.DefaultRequestHeaders.TryAddWithoutValidation("apikey", SupabaseConfig.Key);
-    http.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"Bearer {SupabaseConfig.Key}");
-    return new SupabaseStore(http, sp.GetRequiredService<ILocalStorageService>());
+    return new SupabaseStore(http, sp.GetRequiredService<ILocalStorageService>(), sp.GetRequiredService<AuthService>());
 });
 
 // Nghiệp vụ

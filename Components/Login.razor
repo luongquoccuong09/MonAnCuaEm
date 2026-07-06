@@ -1,0 +1,60 @@
+@inject AuthService Auth
+@inject ISnackbar Snackbar
+
+<div class="login-wrap">
+    <MudPaper Elevation="3" Class="login-card">
+        <div class="text-center mb-6">
+            <div style="font-size:2.6rem; line-height:1;">🐸</div>
+            <MudText Typo="Typo.h5" Class="mt-1"><b>Bếp ăn của Bảo Thy</b></MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">Đăng nhập để cùng xem thực đơn của hai đứa mình 💜</MudText>
+        </div>
+
+        <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" Immediate="true"
+                      InputType="InputType.Email" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Person"
+                      Class="mb-3" />
+        <MudTextField @bind-Value="_password" Label="Mật khẩu" Variant="Variant.Outlined" Immediate="true"
+                      InputType="InputType.Password" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Lock"
+                      OnKeyDown="OnKeyDown" Class="mb-3" />
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3">@_error</MudAlert>
+        }
+
+        <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                   OnClick="DoLogin" Disabled="_busy" Class="py-2">
+            @if (_busy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            @(_busy ? "Đang đăng nhập..." : "Đăng nhập")
+        </MudButton>
+    </MudPaper>
+</div>
+
+@code {
+    private string _email = "";
+    private string _password = "";
+    private bool _busy;
+    private string? _error;
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await DoLogin();
+    }
+
+    private async Task DoLogin()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_password))
+        {
+            _error = "Nhập email và mật khẩu nhé.";
+            return;
+        }
+        _busy = true;
+        _error = null;
+        _error = await Auth.LoginAsync(_email.Trim(), _password);
+        _busy = false;
+        if (_error is null) Snackbar.Add("Chào mừng trở lại 💜", Severity.Success);
+    }
+}

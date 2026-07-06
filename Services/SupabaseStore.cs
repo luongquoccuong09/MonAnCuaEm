@@ -6,24 +6,25 @@ using MonAnCuaEm.Models;
 namespace MonAnCuaEm.Services;
 
 /// <summary>
-/// Lưu dữ liệu lên Supabase (bảng app_data, dùng chung theo "mã gia đình").
-/// Đồng thời mirror xuống LocalStorage để vẫn xem được khi offline, và tự chuyển
-/// dữ liệu cũ đang có trên máy lên mây ở lần chạy đầu tiên.
+/// Lưu dữ liệu lên Supabase (bảng app_data), dùng token của người đăng nhập (bảo vệ bằng RLS).
+/// Mirror xuống LocalStorage để vẫn xem được khi offline, và tự chuyển dữ liệu cũ trên máy
+/// lên mây ở lần chạy đầu tiên.
 /// </summary>
 public class SupabaseStore : IAppStore
 {
     private const string MigratedFlag = "monan.cloud.migrated";
-
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
 
     private readonly HttpClient _http;
     private readonly ILocalStorageService _local;
+    private readonly AuthService _auth;
     private Task? _migration;
 
-    public SupabaseStore(HttpClient http, ILocalStorageService local)
+    public SupabaseStore(HttpClient http, ILocalStorageService local, AuthService auth)
     {
         _http = http;
         _local = local;
+        _auth = auth;
     }
 
     public async Task<T?> GetItemAsync<T>(string key)
@@ -37,7 +38,6 @@ public class SupabaseStore : IAppStore
         }
         catch
         {
-            // Mất mạng / lỗi -> dùng bản mirror trên máy.
             return await _local.GetItemAsync<T>(key);
         }
     }
@@ -65,25 +65,25 @@ public class SupabaseStore : IAppStore
         }
         catch
         {
-            // Best-effort: nếu lỗi thì bỏ qua, lần sau sẽ thử lại.
+            // Best-effort: lỗi thì bỏ qua, lần sau thử lại.
         }
     }
 
     private async Task MigrateKeyAsync<T>(string key)
     {
-        // Nếu trên mây đã có dữ liệu thì tôn trọng mây, không đẩy đè.
-        if (await GetCloudAsync<T>(key) is not null) return;
+        if (await GetCloudAsync<T>(key) is not null) return; // mây đã có -> tôn trọng mây
         var local = await _local.GetItemAsync<T>(key);
         if (local is not null) await SetCloudAsync(key, local);
     }
 
-    // ---------- Gọi REST tới Supabase (PostgREST) ----------
+    // ---------- REST tới Supabase (PostgREST), kèm token đăng nhập ----------
 
     private async Task<T?> GetCloudAsync<T>(string key)
     {
         var uri = $"rest/v1/app_data?household=eq.{SupabaseConfig.Household}" +
                   $"&doc_type=eq.{Uri.EscapeDataString(key)}&select=data";
-        using var resp = await _http.GetAsync(uri);
+        using var req = await BuildRequestAsync(HttpMethod.Get, uri);
+        using var resp = await _http.SendAsync(req);
         resp.EnsureSuccessStatusCode();
 
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
@@ -103,13 +103,20 @@ public class SupabaseStore : IAppStore
             ["updated_at"] = DateTime.UtcNow
         };
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, "rest/v1/app_data")
-        {
-            Content = JsonContent.Create(payload, options: Json)
-        };
+        using var req = await BuildRequestAsync(HttpMethod.Post, "rest/v1/app_data");
+        req.Content = JsonContent.Create(payload, options: Json);
         req.Headers.TryAddWithoutValidation("Prefer", "resolution=merge-duplicates");
 
         using var resp = await _http.SendAsync(req);
         resp.EnsureSuccessStatusCode();
+    }
+
+    private async Task<HttpRequestMessage> BuildRequestAsync(HttpMethod method, string uri)
+    {
+        var req = new HttpRequestMessage(method, uri);
+        var token = await _auth.GetAccessTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+            req.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
+        return req;
     }
 }

@@ -222,3 +222,20 @@ h1:focus {
 }
 
 .cal-chip { max-width: 100%; }
+
+/* ===== Màn hình đăng nhập ===== */
+.login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #EFE7FB 0%, #FAF8FE 60%);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 380px;
+    padding: 32px 28px;
+    border-radius: 22px !important;
+}

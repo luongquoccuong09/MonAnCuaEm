@@ -1,31 +1,65 @@
 @inherits LayoutComponentBase
+@inject AuthService Auth
+@inject NavigationManager Nav
+@implements IDisposable
 
 <MudThemeProvider Theme="AppTheme.Lavender" IsDarkMode="false" />
 <MudPopoverProvider />
 <MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" CloseButton="true" />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="0">
-        <MudIconButton Icon="@Icons.Material.Rounded.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-2">🐸 Bếp ăn của Bảo Thy</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Rounded.Favorite" Color="Color.Inherit" Href="" />
-    </MudAppBar>
+@if (!_ready)
+{
+    <div class="d-flex justify-center align-center" style="height:100vh;">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </div>
+}
+else if (!Auth.IsAuthenticated)
+{
+    <Login />
+}
+else
+{
+    <MudLayout>
+        <MudAppBar Elevation="0">
+            <MudIconButton Icon="@Icons.Material.Rounded.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+            <MudText Typo="Typo.h6" Class="ml-2">🐸 Bếp ăn của Bảo Thy</MudText>
+            <MudSpacer />
+            <MudIconButton Icon="@Icons.Material.Rounded.Logout" Color="Color.Inherit" OnClick="Logout" />
+        </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md" ClipMode="DrawerClipMode.Never">
-        <NavMenu />
-    </MudDrawer>
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md" ClipMode="DrawerClipMode.Never">
+            <NavMenu />
+        </MudDrawer>
 
-    <MudMainContent Class="app-content">
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+        <MudMainContent Class="app-content">
+            <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+}
 
 @code {
     private bool _drawerOpen = true;
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Auth.Changed += OnAuthChanged;
+        await Auth.InitializeAsync();
+        _ready = true;
+    }
+
+    private void OnAuthChanged() => InvokeAsync(StateHasChanged);
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private async Task Logout()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("", forceLoad: true);
+    }
+
+    public void Dispose() => Auth.Changed -= OnAuthChanged;
 }
