@@ -1,18 +1,17 @@
-using Blazored.LocalStorage;
 using MonAnCuaEm.Models;
 
 namespace MonAnCuaEm.Services;
 
-/// <summary>Lưu trữ và quản lý công thức món ăn (CRUD) trong LocalStorage.</summary>
+/// <summary>Quản lý công thức món ăn (CRUD) qua IAppStore (Supabase + mirror trên máy).</summary>
 public class RecipeService
 {
     private const string Key = "monan.recipes";
-    private readonly ILocalStorageService _storage;
+    private readonly IAppStore _storage;
     private List<Recipe>? _cache;
 
     public event Action? Changed;
 
-    public RecipeService(ILocalStorageService storage) => _storage = storage;
+    public RecipeService(IAppStore storage) => _storage = storage;
 
     private async Task EnsureLoadedAsync()
     {

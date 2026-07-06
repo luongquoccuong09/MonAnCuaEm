@@ -1,4 +1,3 @@
-using Blazored.LocalStorage;
 using MonAnCuaEm.Helpers;
 using MonAnCuaEm.Models;
 
@@ -8,12 +7,12 @@ namespace MonAnCuaEm.Services;
 public class MealPlanService
 {
     private const string Key = "monan.mealplan";
-    private readonly ILocalStorageService _storage;
+    private readonly IAppStore _storage;
     private List<MealPlanEntry>? _cache;
 
     public event Action? Changed;
 
-    public MealPlanService(ILocalStorageService storage) => _storage = storage;
+    public MealPlanService(IAppStore storage) => _storage = storage;
 
     private async Task EnsureLoadedAsync()
     {

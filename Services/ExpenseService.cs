@@ -1,18 +1,17 @@
-using Blazored.LocalStorage;
 using MonAnCuaEm.Models;
 
 namespace MonAnCuaEm.Services;
 
-/// <summary>Quản lý các khoản chi phí phát sinh nhập tay.</summary>
+/// <summary>Quản lý các khoản chi phí phát sinh nhập tay (qua IAppStore).</summary>
 public class ExpenseService
 {
     private const string Key = "monan.expenses";
-    private readonly ILocalStorageService _storage;
+    private readonly IAppStore _storage;
     private List<ExtraExpense>? _cache;
 
     public event Action? Changed;
 
-    public ExpenseService(ILocalStorageService storage) => _storage = storage;
+    public ExpenseService(IAppStore storage) => _storage = storage;
 
     private async Task EnsureLoadedAsync()
     {
