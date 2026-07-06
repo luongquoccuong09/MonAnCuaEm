@@ -1,0 +1,125 @@
+@page "/lich-thuc-don"
+@inject MealPlanService MealPlanService
+@inject RecipeService RecipeService
+@inject StatisticsService Stats
+@inject IDialogService DialogService
+
+<PageTitle>Lịch thực đơn — Món Ăn Của Em</PageTitle>
+
+<div class="d-flex align-center justify-space-between flex-wrap gap-3 mb-4">
+    <div>
+        <MudText Typo="Typo.h4"><b>Lịch thực đơn</b></MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">Tuần @Format.FullDate(_weekStart) — @Format.FullDate(_weekStart.AddDays(6))</MudText>
+    </div>
+    <div class="d-flex align-center gap-2">
+        <MudIconButton Icon="@Icons.Material.Rounded.ChevronLeft" Variant="Variant.Outlined" Color="Color.Primary" OnClick="PrevWeek" />
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="ThisWeek">Tuần này</MudButton>
+        <MudIconButton Icon="@Icons.Material.Rounded.ChevronRight" Variant="Variant.Outlined" Color="Color.Primary" OnClick="NextWeek" />
+    </div>
+</div>
+
+<MudPaper Elevation="0" Class="pa-3 mb-4 d-flex align-center gap-2" Style="background:#F1ECFA;">
+    <MudIcon Icon="@Icons.Material.Rounded.Savings" Color="Color.Primary" />
+    <MudText Typo="Typo.subtitle1">Chi phí nguyên liệu tuần này: <b>@Format.Money(_weekCost)</b></MudText>
+</MudPaper>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center pa-10"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var day in DateHelper.WeekDays(_weekStart))
+        {
+            <MudItem xs="12" md="6" lg="4">
+                <MudCard Elevation="1" Class="@(day == _today ? "h-100 today-card" : "h-100")">
+                    <MudCardContent>
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <MudText Typo="Typo.h6">@day.WeekdayVi()</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="@(day == _today ? Color.Primary : Color.Default)"
+                                     Variant="@(day == _today ? Variant.Filled : Variant.Text)">@Format.ShortDate(day)</MudChip>
+                        </div>
+
+                        @foreach (var meal in DisplayNames.AllMealTypes)
+                        {
+                            var recipe = GetAssigned(day, meal);
+                            <div class="meal-slot d-flex align-center gap-2 py-1">
+                                <MudText Typo="Typo.caption" Style="width:42px;" Class="mud-text-secondary">@meal.ToVietnamese()</MudText>
+                                @if (recipe is not null)
+                                {
+                                    <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Class="flex-grow-1 justify-start"
+                                             OnClick="() => Assign(day, meal)"
+                                             OnClose="() => Clear(day, meal)">
+                                        @recipe.Name
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" FullWidth="true"
+                                               StartIcon="@Icons.Material.Rounded.Add" Class="flex-grow-1"
+                                               OnClick="() => Assign(day, meal)">Thêm món</MudButton>
+                                }
+                            </div>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
+    private DateOnly _weekStart;
+    private bool _loading = true;
+
+    private List<MealPlanEntry> _entries = new();
+    private Dictionary<Guid, Recipe> _recipeById = new();
+    private decimal _weekCost;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _weekStart = DateHelper.StartOfWeek(_today);
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _recipeById = (await RecipeService.GetAllAsync()).ToDictionary(r => r.Id);
+        _entries = await MealPlanService.GetWeekAsync(_weekStart);
+        _weekCost = await Stats.CostInRangeAsync(_weekStart, _weekStart.AddDays(6));
+        _loading = false;
+    }
+
+    private Recipe? GetAssigned(DateOnly day, MealType meal)
+    {
+        var entry = _entries.FirstOrDefault(e => e.Date == day && e.MealType == meal);
+        if (entry is null) return null;
+        return _recipeById.TryGetValue(entry.RecipeId, out var r) ? r : null;
+    }
+
+    private async Task Assign(DateOnly date, MealType meal)
+    {
+        var parameters = new DialogParameters { ["Date"] = date, ["Meal"] = meal };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+        var dialog = await DialogService.ShowAsync<AssignMealDialog>("Chọn món", parameters, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled && result.Data is Guid recipeId)
+        {
+            await MealPlanService.AssignAsync(date, meal, recipeId);
+            await Load();
+        }
+    }
+
+    private async Task Clear(DateOnly date, MealType meal)
+    {
+        await MealPlanService.ClearAsync(date, meal);
+        await Load();
+    }
+
+    private async Task PrevWeek() { _weekStart = _weekStart.AddDays(-7); await Load(); }
+    private async Task NextWeek() { _weekStart = _weekStart.AddDays(7); await Load(); }
+    private async Task ThisWeek() { _weekStart = DateHelper.StartOfWeek(_today); await Load(); }
+}

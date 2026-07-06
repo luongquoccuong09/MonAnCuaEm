@@ -1,0 +1,142 @@
+@page "/"
+@inject RecipeService RecipeService
+@inject MealPlanService MealPlanService
+@inject StatisticsService Stats
+@inject NavigationManager Nav
+
+<PageTitle>Trang chủ — Món Ăn Của Em</PageTitle>
+
+<div class="mb-4">
+    <MudText Typo="Typo.h4"><b>Chào em! 🌸</b></MudText>
+    <MudText Typo="Typo.body1" Class="mud-text-secondary">Hôm nay là @_today.WeekdayVi(), @Format.FullDate(_today)</MudText>
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center pa-10"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+}
+else
+{
+    <MudGrid Spacing="3" Class="mb-2">
+        <MudItem xs="12" sm="4">
+            <MudCard Elevation="1" Class="stat-gradient h-100">
+                <MudCardContent>
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Rounded.Savings" />
+                        <MudText Typo="Typo.overline">Chi phí tuần này</MudText>
+                    </div>
+                    <MudText Typo="Typo.h4" Class="mt-1"><b>@Format.Money(_weekCost)</b></MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="6" sm="4">
+            <MudCard Elevation="1" Class="h-100">
+                <MudCardContent>
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Rounded.CalendarMonth" Color="Color.Primary" />
+                        <MudText Typo="Typo.overline" Class="mud-text-secondary">Chi phí tháng này</MudText>
+                    </div>
+                    <MudText Typo="Typo.h5" Class="mt-1"><b>@Format.Money(_monthCost)</b></MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="6" sm="4">
+            <MudCard Elevation="1" Class="h-100">
+                <MudCardContent>
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Rounded.MenuBook" Color="Color.Secondary" />
+                        <MudText Typo="Typo.overline" Class="mud-text-secondary">Số món đã lưu</MudText>
+                    </div>
+                    <MudText Typo="Typo.h5" Class="mt-1"><b>@_recipeCount món</b></MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Elevation="1" Class="pa-4 mt-2">
+        <div class="d-flex align-center justify-space-between mb-3">
+            <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Rounded.Today" Class="mr-1" /> Thực đơn hôm nay</MudText>
+            <MudButton Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Rounded.ArrowForward"
+                       OnClick="@(() => Nav.NavigateTo("/lich-thuc-don"))">Xem lịch</MudButton>
+        </div>
+
+        <MudGrid Spacing="3">
+            @foreach (var meal in DisplayNames.AllMealTypes)
+            {
+                var recipe = _todayMeals[meal];
+                <MudItem xs="12" sm="4">
+                    <MudPaper Elevation="0" Class="pa-3 h-100" Style="background:#F6F2FC; border-radius:14px;">
+                        <MudText Typo="Typo.overline" Color="Color.Primary"><b>@meal.ToVietnamese()</b></MudText>
+                        @if (recipe is not null)
+                        {
+                            <div class="d-flex align-center gap-2 mt-1">
+                                <MudAvatar Rounded="true" Size="Size.Medium">
+                                    @if (!string.IsNullOrEmpty(recipe.ImageData))
+                                    {
+                                        <MudImage Src="@recipe.ImageData" ObjectFit="ObjectFit.Cover" />
+                                    }
+                                    else
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Rounded.Restaurant" />
+                                    }
+                                </MudAvatar>
+                                <div>
+                                    <MudText Typo="Typo.body1"><b>@recipe.Name</b></MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">@Format.Money(recipe.TotalCost)</MudText>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">Chưa có món 🍽️</MudText>
+                        }
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudPaper>
+
+    <MudGrid Spacing="3" Class="mt-1">
+        <MudItem xs="12" sm="6">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Size="Size.Large"
+                       StartIcon="@Icons.Material.Rounded.RestaurantMenu" Class="py-4"
+                       OnClick="@(() => Nav.NavigateTo("/mon-an"))">Quản lý món ăn</MudButton>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Size="Size.Large"
+                       StartIcon="@Icons.Material.Rounded.InsertChartOutlined" Class="py-4"
+                       OnClick="@(() => Nav.NavigateTo("/thong-ke"))">Xem thống kê chi phí</MudButton>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
+    private bool _loading = true;
+
+    private decimal _weekCost;
+    private decimal _monthCost;
+    private int _recipeCount;
+    private Dictionary<MealType, Recipe?> _todayMeals = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var recipes = await RecipeService.GetAllAsync();
+        var recipeById = recipes.ToDictionary(r => r.Id);
+        _recipeCount = recipes.Count;
+
+        var todayEntries = (await MealPlanService.GetAllAsync()).Where(e => e.Date == _today).ToList();
+        foreach (var meal in DisplayNames.AllMealTypes)
+        {
+            var entry = todayEntries.FirstOrDefault(e => e.MealType == meal);
+            _todayMeals[meal] = entry is not null && recipeById.TryGetValue(entry.RecipeId, out var r) ? r : null;
+        }
+
+        var (wStart, wEnd) = DateHelper.WeekRange(_today);
+        _weekCost = await Stats.CostInRangeAsync(wStart, wEnd);
+        var (mStart, mEnd) = DateHelper.MonthRange(_today);
+        _monthCost = await Stats.CostInRangeAsync(mStart, mEnd);
+
+        _loading = false;
+    }
+}

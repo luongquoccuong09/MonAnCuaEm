@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="AppTheme.Lavender" IsDarkMode="false" />
+<MudPopoverProvider />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" CloseButton="true" />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0">
+        <MudIconButton Icon="@Icons.Material.Rounded.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2">🍚 Món Ăn Của Em</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Rounded.Favorite" Color="Color.Inherit" Href="/" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="DrawerVariant.Responsive" Breakpoint="Breakpoint.Md" ClipMode="DrawerClipMode.Never">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="app-content">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-6 px-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+}

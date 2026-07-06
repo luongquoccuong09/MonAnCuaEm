@@ -1,0 +1,156 @@
+@inject ImageService ImageService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Rounded.RestaurantMenu" Class="mr-2" />
+            @(IsEdit ? "Sửa món ăn" : "Thêm món ăn")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="7">
+                <MudTextField @bind-Value="Recipe.Name" Label="Tên món" Variant="Variant.Outlined" Immediate="true"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Fastfood" />
+            </MudItem>
+            <MudItem xs="12" sm="5">
+                <MudSelect T="MealCategory" @bind-Value="Recipe.Category" Label="Danh mục" Variant="Variant.Outlined">
+                    @foreach (var c in DisplayNames.AllCategories)
+                    {
+                        <MudSelectItem T="MealCategory" Value="@c">@c.ToVietnamese()</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="d-flex align-center gap-3 flex-wrap">
+                    <MudAvatar Rounded="true" Style="height:88px; width:88px;">
+                        @if (!string.IsNullOrEmpty(Recipe.ImageData))
+                        {
+                            <MudImage Src="@Recipe.ImageData" ObjectFit="ObjectFit.Cover" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Rounded.Image" Size="Size.Large" />
+                        }
+                    </MudAvatar>
+                    <div class="d-flex flex-column gap-2">
+                        <MudButton HtmlTag="label" for="recipeImageInput" Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Rounded.PhotoCamera" Disabled="_uploading">
+                            @(_uploading ? "Đang xử lý..." : "Tải ảnh lên")
+                        </MudButton>
+                        <InputFile id="recipeImageInput" OnChange="OnImageSelected" accept="image/*" hidden />
+                        @if (!string.IsNullOrEmpty(Recipe.ImageData))
+                        {
+                            <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Rounded.Delete" OnClick="() => Recipe.ImageData = null">
+                                Xoá ảnh
+                            </MudButton>
+                        }
+                    </div>
+                </div>
+                <MudTextField @bind-Value="Recipe.ImageData" Label="…hoặc dán đường dẫn ảnh (URL)" Variant="Variant.Outlined"
+                              Class="mt-2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Link" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Recipe.Note" Label="Ghi chú cách nấu" Variant="Variant.Outlined" Lines="2" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Recipe.Memory" Label="Ghi chú kỷ niệm 💜" Variant="Variant.Outlined" Lines="2"
+                              Placeholder="Ví dụ: món này nấu hôm mình mới quen nhau..."
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Rounded.Favorite" AdornmentColor="Color.Tertiary" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="d-flex align-center justify-space-between mb-2">
+                    <MudText Typo="Typo.subtitle1"><b>Nguyên liệu</b></MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add"
+                               OnClick="AddIngredient">Thêm nguyên liệu</MudButton>
+                </div>
+
+                @if (Recipe.Ingredients.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Chưa có nguyên liệu nào.</MudText>
+                }
+
+                @foreach (var ing in Recipe.Ingredients.ToList())
+                {
+                    <MudPaper Elevation="0" Class="pa-2 mb-2" Style="background:#F6F2FC; border-radius:12px;">
+                        <MudGrid Spacing="2" Class="align-center">
+                            <MudItem xs="12" sm="4">
+                                <MudTextField @bind-Value="ing.Name" Label="Tên" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudNumericField @bind-Value="ing.Quantity" Label="SL" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
+                            </MudItem>
+                            <MudItem xs="4" sm="2">
+                                <MudTextField @bind-Value="ing.Unit" Label="Đơn vị" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            </MudItem>
+                            <MudItem xs="4" sm="3">
+                                <MudNumericField @bind-Value="ing.Price" Label="Giá (₫)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Format="N0" />
+                            </MudItem>
+                            <MudItem xs="12" sm="1" Class="d-flex justify-center">
+                                <MudIconButton Icon="@Icons.Material.Rounded.Close" Color="Color.Error" Size="Size.Small"
+                                               OnClick="() => RemoveIngredient(ing)" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                }
+
+                <div class="d-flex justify-end mt-2">
+                    <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">
+                        Tổng nguyên liệu: @Format.Money(Recipe.TotalCost)
+                    </MudChip>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Huỷ</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_uploading">Lưu</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public Recipe Recipe { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+
+    private bool _uploading;
+
+    private void AddIngredient() => Recipe.Ingredients.Add(new Ingredient());
+
+    private void RemoveIngredient(Ingredient ing) => Recipe.Ingredients.Remove(ing);
+
+    private async Task OnImageSelected(InputFileChangeEventArgs e)
+    {
+        _uploading = true;
+        try
+        {
+            Recipe.ImageData = await ImageService.ToCompressedDataUrlAsync(e.File);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Không đọc được ảnh: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Recipe.Name))
+        {
+            Snackbar.Add("Hãy nhập tên món ăn nhé!", Severity.Warning);
+            return;
+        }
+        MudDialog.Close(DialogResult.Ok(Recipe));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

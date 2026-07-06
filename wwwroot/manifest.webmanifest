@@ -1,0 +1,28 @@
+{
+  "name": "Món Ăn Của Em",
+  "short_name": "Món Ăn",
+  "description": "Quản lý công thức món ăn, lịch thực đơn tuần và chi phí bếp núc.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "lang": "vi",
+  "background_color": "#FAF8FE",
+  "theme_color": "#8A6FD4",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    }
+  ]
+}

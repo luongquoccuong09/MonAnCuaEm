@@ -1,0 +1,19 @@
+## .NET / Blazor
+bin/
+obj/
+publish/
+publish-test/
+release/
+[Dd]ebug/
+[Rr]elease/
+
+## IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+
+## OS
+.DS_Store
+Thumbs.db

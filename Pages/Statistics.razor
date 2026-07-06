@@ -1,0 +1,169 @@
+@page "/thong-ke"
+@using ApexCharts
+@using Color = MudBlazor.Color
+@using Size = MudBlazor.Size
+@using Format = MonAnCuaEm.Helpers.Format
+@inject StatisticsService Stats
+@inject ExpenseService ExpenseService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Thống kê chi phí — Món Ăn Của Em</PageTitle>
+
+<div class="d-flex align-center justify-space-between flex-wrap gap-3 mb-4">
+    <div>
+        <MudText Typo="Typo.h4"><b>Thống kê chi phí</b></MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">Tổng hợp từ nguyên liệu trong lịch + chi phí phát sinh</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.Add"
+               Class="rounded-lg" OnClick="() => OpenExpenseDialog(null)">Thêm chi phí</MudButton>
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center pa-10"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+}
+else
+{
+    <MudGrid Spacing="3" Class="mb-2">
+        <MudItem xs="12" sm="6">
+            <MudCard Elevation="1" Class="stat-gradient pa-2">
+                <MudCardContent>
+                    <MudText Typo="Typo.overline">Tuần này</MudText>
+                    <MudText Typo="Typo.h4"><b>@Format.Money(_week.Current)</b></MudText>
+                    <MudText Typo="Typo.body2">Tuần trước: @Format.Money(_week.Previous) &nbsp; @DeltaLabel(_week)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudCard Elevation="1" Class="stat-gradient pa-2">
+                <MudCardContent>
+                    <MudText Typo="Typo.overline">Tháng này</MudText>
+                    <MudText Typo="Typo.h4"><b>@Format.Money(_month.Current)</b></MudText>
+                    <MudText Typo="Typo.body2">Tháng trước: @Format.Money(_month.Previous) &nbsp; @DeltaLabel(_month)</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" lg="6">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-2">Chi phí theo tuần (8 tuần gần nhất)</MudText>
+                <ApexChart TItem="CostPoint" Options="_weekChartOptions" Height="280">
+                    <ApexPointSeries TItem="CostPoint" Items="_weekSeries" Name="Chi phí" SeriesType="SeriesType.Bar"
+                                     XValue="@(p => p.Label)" YValue="@(p => p.Amount)" />
+                </ApexChart>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="6">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-2">Chi phí theo tháng (6 tháng gần nhất)</MudText>
+                <ApexChart TItem="CostPoint" Options="_monthChartOptions" Height="280">
+                    <ApexPointSeries TItem="CostPoint" Items="_monthSeries" Name="Chi phí" SeriesType="SeriesType.Bar"
+                                     XValue="@(p => p.Label)" YValue="@(p => p.Amount)" />
+                </ApexChart>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h6" Class="mt-6 mb-2">Chi phí phát sinh</MudText>
+    @if (_expenses.Count == 0)
+    {
+        <MudPaper Elevation="1" Class="pa-6 d-flex flex-column align-center">
+            <MudIcon Icon="@Icons.Material.Rounded.ReceiptLong" Color="Color.Secondary" Size="Size.Large" />
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">Chưa có khoản chi phát sinh nào.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudPaper Elevation="1" Class="pa-2">
+            <MudTable Items="_expenses" Hover="true" Dense="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Ngày</MudTh>
+                    <MudTh>Ghi chú</MudTh>
+                    <MudTh Style="text-align:right">Số tiền</MudTh>
+                    <MudTh Style="text-align:right"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Ngày">@Format.FullDate(context.Date)</MudTd>
+                    <MudTd DataLabel="Ghi chú">@context.Note</MudTd>
+                    <MudTd DataLabel="Số tiền" Style="text-align:right"><b>@Format.Money(context.Amount)</b></MudTd>
+                    <MudTd Style="text-align:right">
+                        <MudIconButton Icon="@Icons.Material.Rounded.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => OpenExpenseDialog(context)" />
+                        <MudIconButton Icon="@Icons.Material.Rounded.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteExpense(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    }
+}
+
+@code {
+    private DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
+    private bool _loading = true;
+
+    private PeriodSummary _week = new();
+    private PeriodSummary _month = new();
+    private List<CostPoint> _weekSeries = new();
+    private List<CostPoint> _monthSeries = new();
+    private List<ExtraExpense> _expenses = new();
+
+    private readonly ApexChartOptions<CostPoint> _weekChartOptions = BuildOptions();
+    private readonly ApexChartOptions<CostPoint> _monthChartOptions = BuildOptions();
+
+    private static ApexChartOptions<CostPoint> BuildOptions() => new()
+    {
+        Colors = new List<string> { "#8A6FD4" },
+        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
+        DataLabels = new DataLabels { Enabled = false }
+    };
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        _loading = true;
+        _week = await Stats.WeekSummaryAsync(_today);
+        _month = await Stats.MonthSummaryAsync(_today);
+        _weekSeries = await Stats.WeeklySeriesAsync(8, _today);
+        _monthSeries = await Stats.MonthlySeriesAsync(6, _today);
+        _expenses = await ExpenseService.GetAllAsync();
+        _loading = false;
+    }
+
+    private string DeltaLabel(PeriodSummary s)
+    {
+        if (s.DeltaPercent is null) return "(mới)";
+        var arrow = s.Delta >= 0 ? "▲" : "▼";
+        return $"{arrow} {Math.Abs(s.DeltaPercent.Value):0.#}%";
+    }
+
+    private async Task OpenExpenseDialog(ExtraExpense? existing)
+    {
+        var model = existing is null
+            ? new ExtraExpense { Date = _today }
+            : new ExtraExpense { Id = existing.Id, Date = existing.Date, Amount = existing.Amount, Note = existing.Note };
+
+        var parameters = new DialogParameters { ["Expense"] = model, ["IsEdit"] = existing is not null };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+        var dialog = await DialogService.ShowAsync<ExpenseDialog>("Chi phí", parameters, options);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled && result.Data is ExtraExpense saved)
+        {
+            await ExpenseService.SaveAsync(saved);
+            await Load();
+            Snackbar.Add("Đã lưu chi phí.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteExpense(ExtraExpense e)
+    {
+        bool? confirmed = await DialogService.ShowMessageBox("Xoá chi phí", "Xoá khoản chi này?", yesText: "Xoá", cancelText: "Huỷ");
+        if (confirmed == true)
+        {
+            await ExpenseService.DeleteAsync(e.Id);
+            await Load();
+        }
+    }
+}

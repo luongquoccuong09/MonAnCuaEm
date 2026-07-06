@@ -1,0 +1,57 @@
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Rounded.ReceiptLong" Class="mr-2" />
+            @(IsEdit ? "Sửa chi phí phát sinh" : "Thêm chi phí phát sinh")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudDatePicker @bind-Date="_date" Label="Ngày" Variant="Variant.Outlined" DateFormat="dd/MM/yyyy" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField @bind-Value="Expense.Amount" Label="Số tiền (₫)" Variant="Variant.Outlined" Min="0" Format="N0" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Expense.Note" Label="Ghi chú" Variant="Variant.Outlined" Lines="2"
+                              Placeholder="Ví dụ: mua gia vị, ăn ngoài, đi chợ..." />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Huỷ</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Lưu</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public ExtraExpense Expense { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; }
+
+    private DateTime? _date;
+
+    protected override void OnInitialized()
+    {
+        _date = Expense.Date == default
+            ? DateTime.Today
+            : Expense.Date.ToDateTime(TimeOnly.MinValue);
+    }
+
+    private void Submit()
+    {
+        if (Expense.Amount <= 0)
+        {
+            Snackbar.Add("Số tiền phải lớn hơn 0.", Severity.Warning);
+            return;
+        }
+        Expense.Date = DateOnly.FromDateTime(_date ?? DateTime.Today);
+        MudDialog.Close(DialogResult.Ok(Expense));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

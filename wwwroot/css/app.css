@@ -1,0 +1,164 @@
+/* ===== Món Ăn Của Em — tông tím pastel, bo góc mềm ===== */
+
+html, body {
+    font-family: 'Nunito', 'Quicksand', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-color: #FAF8FE;
+}
+
+/* Ép font thân thiện cho các thành phần MudBlazor */
+.mud-typography,
+.mud-input-root,
+.mud-button-root,
+.mud-nav-link,
+.mud-table,
+.mud-chip,
+.mud-tabs,
+.mud-list-item,
+input, textarea, select, button {
+    font-family: 'Nunito', 'Quicksand', 'Segoe UI', sans-serif !important;
+}
+
+h1:focus {
+    outline: none;
+}
+
+/* Bo góc + shadow nhẹ, ấm áp cho card/paper */
+.mud-paper,
+.mud-card {
+    border-radius: 18px !important;
+}
+
+.mud-elevation-1 {
+    box-shadow: 0 6px 24px rgba(138, 111, 212, 0.10) !important;
+}
+
+.mud-elevation-2,
+.mud-elevation-3 {
+    box-shadow: 0 10px 30px rgba(138, 111, 212, 0.14) !important;
+}
+
+.mud-appbar {
+    box-shadow: 0 4px 18px rgba(138, 111, 212, 0.18) !important;
+}
+
+/* Thương hiệu trên sidebar */
+.nav-brand {
+    border-bottom: 1px solid #ECE6F6;
+    margin-bottom: 8px;
+}
+
+.nav-brand .brand-title {
+    font-weight: 800;
+    color: #6A4FB8;
+}
+
+.nav-brand .brand-subtitle {
+    color: #9A93A8;
+}
+
+.mud-nav-link {
+    border-radius: 12px !important;
+    margin: 2px 6px;
+}
+
+.mud-nav-link.active {
+    background-color: rgba(138, 111, 212, 0.14) !important;
+    font-weight: 700;
+}
+
+/* Tiện ích bố cục */
+.h-100 { height: 100%; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+
+.memory-note {
+    font-style: italic;
+    color: #6A4FB8;
+    background: #F6F2FC;
+    border-radius: 10px;
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.today-card {
+    border: 2px solid #B79CE0;
+}
+
+/* Card có gradient tím nhạt dùng cho các số liệu nổi bật */
+.stat-gradient {
+    background: linear-gradient(135deg, #A78BE0 0%, #C9B6E4 100%);
+    color: #fff;
+}
+
+.stat-gradient .mud-typography {
+    color: #fff !important;
+}
+
+/* ===== Trạng thái tải & lỗi ===== */
+#blazor-error-ui {
+    background: #FFF4F6;
+    color: #A23A52;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 3000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.blazor-error-boundary {
+    background: #E37B93;
+    padding: 1rem;
+    color: white;
+    border-radius: 12px;
+}
+
+    .blazor-error-boundary::after {
+        content: "Đã xảy ra lỗi.";
+    }
+
+.loading-progress {
+    position: relative;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    margin: 22vh auto 1rem auto;
+}
+
+    .loading-progress circle {
+        fill: none;
+        stroke: #ECE6F6;
+        stroke-width: 0.6rem;
+        transform-origin: 50% 50%;
+        transform: rotate(-90deg);
+    }
+
+        .loading-progress circle:last-child {
+            stroke: #8A6FD4;
+            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+            transition: stroke-dasharray 0.05s ease-in-out;
+        }
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: bold;
+    color: #6A4FB8;
+    inset: calc(22vh + 3.25rem) 0 auto 0.2rem;
+}
+
+    .loading-progress-text:after {
+        content: "Đang tải Món Ăn Của Em...";
+    }
