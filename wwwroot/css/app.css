@@ -162,3 +162,63 @@ h1:focus {
     .loading-progress-text:after {
         content: "Đang tải Bếp ăn của Bảo Thy...";
     }
+
+/* ===== Lịch thực đơn — chế độ xem lịch ngang ===== */
+.cal-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+}
+
+.cal-table {
+    border-collapse: separate;
+    border-spacing: 6px;
+    width: 100%;
+    min-width: 720px;
+}
+
+.cal-table th,
+.cal-table td {
+    text-align: center;
+}
+
+.cal-table thead th {
+    padding: 6px 4px;
+    border-radius: 10px;
+    background: #F1ECFA;
+    color: #4A4458;
+}
+
+.cal-table .cal-dow { font-weight: 700; font-size: 0.85rem; }
+.cal-table .cal-date { font-size: 0.72rem; color: #9A93A8; }
+
+.cal-table .cal-today-head { background: #8A6FD4; color: #fff; }
+.cal-table .cal-today-head .cal-date { color: #EDE3FF; }
+
+.cal-table .cal-corner { background: transparent; }
+
+.cal-table .cal-meal {
+    font-weight: 700;
+    color: #6A4FB8;
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 6px;
+    width: 52px;
+}
+
+.cal-table .cal-cell {
+    background: #FBFAFE;
+    border: 1px solid #ECE6F6;
+    border-radius: 12px;
+    padding: 6px;
+    vertical-align: middle;
+    min-width: 92px;
+    height: 58px;
+}
+
+.cal-table .cal-cell.cal-today {
+    border-color: #B79CE0;
+    background: #F6F2FC;
+}
+
+.cal-chip { max-width: 100%; }

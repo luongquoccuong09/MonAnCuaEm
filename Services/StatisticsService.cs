@@ -19,18 +19,22 @@ public class StatisticsService
 
     /// <summary>Tổng chi phí trong khoảng ngày [start, end].</summary>
     public async Task<decimal> CostInRangeAsync(DateOnly start, DateOnly end)
+        => (await BreakdownInRangeAsync(start, end)).Total;
+
+    /// <summary>Chi phí tách theo nguồn (nguyên liệu / phát sinh) trong khoảng ngày.</summary>
+    public async Task<CostBreakdown> BreakdownInRangeAsync(DateOnly start, DateOnly end)
     {
         var costById = (await _recipes.GetAllAsync()).ToDictionary(r => r.Id, r => r.TotalCost);
 
-        var planCost = (await _plan.GetAllAsync())
+        var ingredient = (await _plan.GetAllAsync())
             .Where(e => DateHelper.InRange(e.Date, start, end) && costById.ContainsKey(e.RecipeId))
             .Sum(e => costById[e.RecipeId]);
 
-        var extraCost = (await _expenses.GetAllAsync())
+        var extra = (await _expenses.GetAllAsync())
             .Where(x => DateHelper.InRange(x.Date, start, end))
             .Sum(x => x.Amount);
 
-        return planCost + extraCost;
+        return new CostBreakdown(ingredient, extra);
     }
 
     /// <summary>Chuỗi chi phí <paramref name="weeks"/> tuần gần nhất (tính tới tuần chứa <paramref name="reference"/>).</summary>
@@ -45,6 +49,20 @@ public class StatisticsService
             result.Add(new CostPoint(Format.ShortDate(start), amount));
         }
         return result;
+    }
+
+    /// <summary>Bảng chi phí theo tuần: mỗi dòng là 1 tuần (Thứ 2 -> Chủ nhật) kèm chi tiết nguồn.</summary>
+    public async Task<List<WeekRow>> WeeklyBreakdownAsync(int weeks, DateOnly reference)
+    {
+        var rows = new List<WeekRow>();
+        for (int i = weeks - 1; i >= 0; i--)
+        {
+            var day = reference.AddDays(-7 * i);
+            var (start, end) = DateHelper.WeekRange(day);
+            var b = await BreakdownInRangeAsync(start, end);
+            rows.Add(new WeekRow(start, end, b.Ingredient, b.Extra));
+        }
+        return rows;
     }
 
     /// <summary>Chuỗi chi phí <paramref name="months"/> tháng gần nhất.</summary>

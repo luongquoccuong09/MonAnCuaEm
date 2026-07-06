@@ -18,16 +18,27 @@
     </div>
 </div>
 
-<MudPaper Elevation="0" Class="pa-3 mb-4 d-flex align-center gap-2" Style="background:#F1ECFA;">
-    <MudIcon Icon="@Icons.Material.Rounded.Savings" Color="Color.Primary" />
-    <MudText Typo="Typo.subtitle1">Chi phí nguyên liệu tuần này: <b>@Format.Money(_weekCost)</b></MudText>
-</MudPaper>
+<div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-4">
+    <MudPaper Elevation="0" Class="pa-3 d-flex align-center gap-2 flex-grow-1" Style="background:#F1ECFA;">
+        <MudIcon Icon="@Icons.Material.Rounded.Savings" Color="Color.Primary" />
+        <MudText Typo="Typo.subtitle1">Chi phí nguyên liệu tuần này: <b>@Format.Money(_weekCost)</b></MudText>
+    </MudPaper>
+
+    <div class="d-flex align-center gap-2">
+        <MudButton Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.ViewList"
+                   Variant="@(_view == MealView.List ? Variant.Filled : Variant.Outlined)"
+                   OnClick="() => _view = MealView.List">Danh sách</MudButton>
+        <MudButton Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Rounded.CalendarViewWeek"
+                   Variant="@(_view == MealView.Calendar ? Variant.Filled : Variant.Outlined)"
+                   OnClick="() => _view = MealView.Calendar">Lịch ngang</MudButton>
+    </div>
+</div>
 
 @if (_loading)
 {
     <div class="d-flex justify-center pa-10"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
 }
-else
+else if (_view == MealView.List)
 {
     <MudGrid Spacing="3">
         @foreach (var day in DateHelper.WeekDays(_weekStart))
@@ -68,11 +79,59 @@ else
         }
     </MudGrid>
 }
+else
+{
+    <div class="cal-scroll">
+        <table class="cal-table">
+            <thead>
+                <tr>
+                    <th class="cal-corner"></th>
+                    @foreach (var day in DateHelper.WeekDays(_weekStart))
+                    {
+                        <th class="@(day == _today ? "cal-today-head" : "")">
+                            <div class="cal-dow">@day.WeekdayVi()</div>
+                            <div class="cal-date">@Format.ShortDate(day)</div>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var meal in DisplayNames.AllMealTypes)
+                {
+                    <tr>
+                        <td class="cal-meal">@meal.ToVietnamese()</td>
+                        @foreach (var day in DateHelper.WeekDays(_weekStart))
+                        {
+                            var recipe = GetAssigned(day, meal);
+                            <td class="cal-cell @(day == _today ? "cal-today" : "")">
+                                @if (recipe is not null)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Filled" Class="cal-chip"
+                                             OnClick="() => Assign(day, meal)" OnClose="() => Clear(day, meal)">
+                                        @recipe.Name
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Rounded.Add" Size="Size.Small" Color="Color.Primary"
+                                                   OnClick="() => Assign(day, meal)" />
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
 
 @code {
+    private enum MealView { List, Calendar }
+
     private DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
     private DateOnly _weekStart;
     private bool _loading = true;
+    private MealView _view = MealView.List;
 
     private List<MealPlanEntry> _entries = new();
     private Dictionary<Guid, Recipe> _recipeById = new();

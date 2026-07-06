@@ -67,6 +67,30 @@ else
         </MudItem>
     </MudGrid>
 
+    <MudPaper Elevation="1" Class="pa-4 mt-6">
+        <MudText Typo="Typo.h6" Class="mb-2">Bảng chi phí theo tuần</MudText>
+        <MudTable Items="_weekRows" Hover="true" Dense="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+            <HeaderContent>
+                <MudTh>Tuần</MudTh>
+                <MudTh Style="text-align:right">Nguyên liệu</MudTh>
+                <MudTh Style="text-align:right">Phát sinh</MudTh>
+                <MudTh Style="text-align:right">Tổng</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Tuần">
+                    @Format.ShortDate(context.Start) – @Format.ShortDate(context.End)
+                    @if (context.Start <= _today && _today <= context.End)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="ml-1">tuần này</MudChip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Nguyên liệu" Style="text-align:right">@Format.Money(context.Ingredient)</MudTd>
+                <MudTd DataLabel="Phát sinh" Style="text-align:right">@Format.Money(context.Extra)</MudTd>
+                <MudTd DataLabel="Tổng" Style="text-align:right"><b>@Format.Money(context.Total)</b></MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+
     <MudText Typo="Typo.h6" Class="mt-6 mb-2">Chi phí phát sinh</MudText>
     @if (_expenses.Count == 0)
     {
@@ -108,6 +132,7 @@ else
     private List<CostPoint> _weekSeries = new();
     private List<CostPoint> _monthSeries = new();
     private List<ExtraExpense> _expenses = new();
+    private List<WeekRow> _weekRows = new();
 
     private readonly ApexChartOptions<CostPoint> _weekChartOptions = BuildOptions();
     private readonly ApexChartOptions<CostPoint> _monthChartOptions = BuildOptions();
@@ -115,8 +140,29 @@ else
     private static ApexChartOptions<CostPoint> BuildOptions() => new()
     {
         Colors = new List<string> { "#8A6FD4" },
-        Chart = new Chart { Toolbar = new Toolbar { Show = false } },
-        DataLabels = new DataLabels { Enabled = false }
+        Chart = new Chart { Toolbar = new Toolbar { Show = false }, FontFamily = "Nunito, sans-serif" },
+        PlotOptions = new PlotOptions
+        {
+            Bar = new PlotOptionsBar
+            {
+                BorderRadius = 6,
+                ColumnWidth = "55%",
+                DataLabels = new PlotOptionsBarDataLabels { Position = BarDataLabelPosition.Top }
+            }
+        },
+        DataLabels = new DataLabels
+        {
+            Enabled = true,
+            OffsetY = -18,
+            // Hiển thị gọn: >=1tr -> "x.xtr", >=1k -> "xk"
+            Formatter = @"function (val) { if (val == null) return ''; if (val >= 1000000) return (val/1000000).toFixed(1).replace('.0','') + 'tr'; if (val >= 1000) return Math.round(val/1000) + 'k'; return val; }",
+            Style = new DataLabelsStyle
+            {
+                FontSize = "11px",
+                FontWeight = "700",
+                Colors = new List<string> { "#6A4FB8" }
+            }
+        }
     };
 
     protected override async Task OnInitializedAsync() => await Load();
@@ -129,6 +175,8 @@ else
         _weekSeries = await Stats.WeeklySeriesAsync(8, _today);
         _monthSeries = await Stats.MonthlySeriesAsync(6, _today);
         _expenses = await ExpenseService.GetAllAsync();
+        _weekRows = await Stats.WeeklyBreakdownAsync(8, _today);
+        _weekRows.Reverse();
         _loading = false;
     }
 

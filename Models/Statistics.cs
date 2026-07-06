@@ -21,3 +21,15 @@ public class PeriodSummary
         }
     }
 }
+
+/// <summary>Chi phí tách theo nguồn: nguyên liệu trong lịch và chi phí phát sinh.</summary>
+public record CostBreakdown(decimal Ingredient, decimal Extra)
+{
+    public decimal Total => Ingredient + Extra;
+}
+
+/// <summary>Một dòng tổng hợp chi phí theo tuần (dùng cho bảng theo tuần).</summary>
+public record WeekRow(DateOnly Start, DateOnly End, decimal Ingredient, decimal Extra)
+{
+    public decimal Total => Ingredient + Extra;
+}
