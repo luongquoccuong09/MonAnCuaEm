@@ -32,7 +32,9 @@ jobs:
       # Với "project site" (https://<user>.github.io/<repo>/) cần đổi base href thành /<repo>/.
       # Nếu bạn dùng "user/organization site" (repo tên <user>.github.io) thì XOÁ bước này.
       - name: Rewrite base href for project site
-        run: sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|g' release/wwwroot/index.html
+        run: |
+          sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|g' release/wwwroot/index.html
+          sed -i 's|const base = "/";|const base = "/${{ github.event.repository.name }}/";|g' release/wwwroot/service-worker.published.js
 
       # Tắt Jekyll để GitHub Pages không bỏ qua thư mục _framework.
       - name: Add .nojekyll

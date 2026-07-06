@@ -57,7 +57,7 @@ else
         <div class="d-flex align-center justify-space-between mb-3">
             <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Rounded.Today" Class="mr-1" /> Thực đơn hôm nay</MudText>
             <MudButton Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Rounded.ArrowForward"
-                       OnClick="@(() => Nav.NavigateTo("/lich-thuc-don"))">Xem lịch</MudButton>
+                       OnClick="@(() => Nav.NavigateTo("lich-thuc-don"))">Xem lịch</MudButton>
         </div>
 
         <MudGrid Spacing="3">
@@ -100,12 +100,12 @@ else
         <MudItem xs="12" sm="6">
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Size="Size.Large"
                        StartIcon="@Icons.Material.Rounded.RestaurantMenu" Class="py-4"
-                       OnClick="@(() => Nav.NavigateTo("/mon-an"))">Quản lý món ăn</MudButton>
+                       OnClick="@(() => Nav.NavigateTo("mon-an"))">Quản lý món ăn</MudButton>
         </MudItem>
         <MudItem xs="12" sm="6">
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Size="Size.Large"
                        StartIcon="@Icons.Material.Rounded.InsertChartOutlined" Class="py-4"
-                       OnClick="@(() => Nav.NavigateTo("/thong-ke"))">Xem thống kê chi phí</MudButton>
+                       OnClick="@(() => Nav.NavigateTo("thong-ke"))">Xem thống kê chi phí</MudButton>
         </MudItem>
     </MudGrid>
 }
