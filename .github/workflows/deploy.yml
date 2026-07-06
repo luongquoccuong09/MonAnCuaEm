@@ -34,7 +34,7 @@ jobs:
       - name: Rewrite base href for project site
         run: |
           sed -i 's|<base href="/" />|<base href="/${{ github.event.repository.name }}/" />|g' release/wwwroot/index.html
-          sed -i 's|const base = "/";|const base = "/${{ github.event.repository.name }}/";|g' release/wwwroot/service-worker.published.js
+          sed -i 's|const base = "/";|const base = "/${{ github.event.repository.name }}/";|g' release/wwwroot/service-worker.js
 
       # Tắt Jekyll để GitHub Pages không bỏ qua thư mục _framework.
       - name: Add .nojekyll
