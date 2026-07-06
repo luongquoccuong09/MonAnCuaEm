@@ -1,4 +1,4 @@
-/* ===== Món Ăn Của Em — tông tím pastel, bo góc mềm ===== */
+/* ===== Bếp ăn của Bảo Thy — tông tím pastel, bo góc mềm ===== */
 
 html, body {
     font-family: 'Nunito', 'Quicksand', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -160,5 +160,5 @@ h1:focus {
 }
 
     .loading-progress-text:after {
-        content: "Đang tải Món Ăn Của Em...";
+        content: "Đang tải Bếp ăn của Bảo Thy...";
     }

@@ -36,7 +36,7 @@ public class Recipe
         ImageData = ImageData,
         CreatedAt = CreatedAt,
         Ingredients = Ingredients
-            .Select(i => new Ingredient { Name = i.Name, Quantity = i.Quantity, Unit = i.Unit, Price = i.Price })
+            .Select(i => new Ingredient { Name = i.Name, Price = i.Price })
             .ToList()
     };
 }

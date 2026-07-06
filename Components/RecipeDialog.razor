@@ -79,16 +79,10 @@
                 {
                     <MudPaper Elevation="0" Class="pa-2 mb-2" Style="background:#F6F2FC; border-radius:12px;">
                         <MudGrid Spacing="2" Class="align-center">
-                            <MudItem xs="12" sm="4">
+                            <MudItem xs="12" sm="7">
                                 <MudTextField @bind-Value="ing.Name" Label="Tên" Variant="Variant.Outlined" Margin="Margin.Dense" />
                             </MudItem>
-                            <MudItem xs="4" sm="2">
-                                <MudNumericField @bind-Value="ing.Quantity" Label="SL" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
-                            </MudItem>
-                            <MudItem xs="4" sm="2">
-                                <MudTextField @bind-Value="ing.Unit" Label="Đơn vị" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                            </MudItem>
-                            <MudItem xs="4" sm="3">
+                            <MudItem xs="10" sm="4">
                                 <MudNumericField @bind-Value="ing.Price" Label="Giá (₫)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Format="N0" />
                             </MudItem>
                             <MudItem xs="12" sm="1" Class="d-flex justify-center">
